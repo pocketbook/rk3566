@@ -1,0 +1,66 @@
+#!/bin/sh
+
+PIDFILE=/var/run/dropbear.pid
+
+start() {
+	echo "Starting dropbear..."
+	if [ -f "$PIDFILE" ] && kill -0 "$(cat $PIDFILE)" 2>/dev/null; then
+		echo "dropbear already running"
+		return 0
+	fi
+
+    NET=192.168.205
+    UDHCONF=/var/run/udhcpd.conf
+        usleep 250000
+        ifconfig usb0 up $NET.1
+        echo "start $NET.2" >$UDHCONF
+        echo "end $NET.254" >>$UDHCONF
+        echo "interface usb0" >>$UDHCONF
+        echo "opt subnet 255.255.255.0" >>$UDHCONF
+        /sbin/udhcpd $UDHCONF
+	ln -s /etc/dropbear /var/run/dropbear
+	/sbin/dropbear -p $NET.1:22
+
+	pidof dropbear > "$PIDFILE"
+	echo "dropbear started"
+}
+
+stop() {
+	echo "Stopping dropbear..."
+	if [ -f "$PIDFILE" ]; then
+		kill "$(cat $PIDFILE)" 2>/dev/null
+		rm -f "$PIDFILE"
+		echo "dropbear stopped"
+	else
+		echo "dropbear not running"
+	fi
+}
+
+status() {
+	if pidof dropbear >/dev/null; then
+		echo "dropbear is running"
+		return 0
+	else
+		echo "dropbear is stopped"
+		return 1
+	fi
+}
+
+restart() {
+	stop
+	sleep 1
+	start
+}
+
+case "$1" in
+	start)   start ;;
+	stop)    stop ;;
+	restart) restart ;;
+	status)  status ;;
+	*)
+		echo "Usage: $0 {start|stop|restart|status}"
+		exit 1
+		;;
+esac
+
+exit 0

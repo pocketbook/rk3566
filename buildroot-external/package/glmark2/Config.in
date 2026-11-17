@@ -1,0 +1,10 @@
+config BR2_PACKAGE_GLMARK2
+	bool "glmark2"
+	depends on BR2_INSTALL_LIBSTDCPP
+	select BR2_PACKAGE_JPEG
+	select BR2_PACKAGE_LIBDRM if BR2_PACKAGE_GLMARK2_FLAVOR_DRM_GLESV2
+	select BR2_PACKAGE_LIBPNG
+	help
+	  glmark2 is an OpenGL 2.0 and ES 2.0 benchmark.
+
+	  https://github.com/glmark2/glmark2

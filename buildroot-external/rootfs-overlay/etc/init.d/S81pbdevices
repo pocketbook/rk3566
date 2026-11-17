@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# create hardware-independent device nodes
+ln -s /dev/disk/by-partlabel/userdata /dev/user_int
+ln -s /dev/disk/by-partlabel/secure /dev/secure
+ln -s /dev/disk/by-partlabel/pbenv /dev/pbenv
+
+# create links to current partitions for swupdate
+eval $(grep -o bootslot=. /proc/cmdline)
+if [ $bootslot ] ; then
+        ln -s boot_$bootslot /dev/disk/by-partlabel/boot
+        ln -s rootfs_$bootslot /dev/disk/by-partlabel/rootfs
+fi
+
+# prepare needed mountpoint folders
+mkdir -p /mnt/ext1
+mkdir -p /mnt/ext2
+mkdir -p /mnt/ext3
+mkdir -p /mnt/secure
+
+mount -a
+mount -o remount,ro /
+
+# access to eink display for everyone
+chmod og+rw /dev/ebc /dev/rga /dev/dma_heap/system*
+
+#ability to read device config for all groups
+chmod o+r /dev/pbenv
+

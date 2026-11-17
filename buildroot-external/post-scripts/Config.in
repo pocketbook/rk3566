@@ -1,0 +1,35 @@
+config BR2_POSTBUILD_COPY_MODULES
+	bool "Copy kernel modules to rootfs"
+	default n
+
+config BR2_POSTBUILD_WIFIBT_FW
+	bool "Copy WIFI/BT firmware to rootfs"
+	default n
+
+config BR2_POSTBUILD_CREATE_FILES_AND_DIRS
+	bool "Create needed files and dirs in rootfs"
+	default n
+
+config BR2_POSTBUILD_CREATE_HWCONFIG
+	bool "Create hwconfig file"
+	default n
+
+config BR2_POSTBUILD_REMOVE_UNNEEDED_RC_SCRIPTS
+	bool "Remove unneeded init.d scripts"
+	default n
+
+config BR2_POSTBUILD_FSIMAGE_TAR_GZ
+        bool "Generate /ebrmain/fsimage.tar.gz from /ebrmain/content"
+        default n
+
+config BR2_POSTBUILD_ZONEINFO_TAR_GZ
+        bool "Generate /ebrmain/share/zoneinfo.tar.gz from /ebrmain/share/zoneinfo.lst"
+        default n
+
+config BR2_POSTBUILD_GEN_FONTCONFIG_CACHE
+        bool "Generate fontconfig cache"
+        default n
+
+config BR2_POSTBUILD_CP_MINISWUPDATE_TO_RECOVERY
+        bool "Copy mini swupdate to recovery"
+        default n

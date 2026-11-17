@@ -1,0 +1,45 @@
+#!/bin/sh
+
+/etc/init.d/usb stop
+
+while true ; do
+
+	USB=`cat /sys/class/power_supply/usb/online`
+        AC=`cat /sys/class/power_supply/ac/online`
+        BUTTON=`cat sys/class/rk/pwrkey/state`
+        VBAT=`cat /sys/class/power_supply/battery/voltage_now`
+        CBAT=`cat /sys/class/power_supply/battery/capacity`
+        IBAT=`cat /sys/class/power_supply/battery/current_now`
+
+        echo "USB:${USB} AC:${AC} BUTTON:${BUTTON} BATTERY:${VBAT}mV (${CBAT}%) CURRENT:${IBAT}" 
+
+        usleep 1500000
+
+	# break when power button pressed or usb cable removed
+        [ $BUTTON = 1 ] && break
+        [ $USB = 0 -a $AC = 0 ] && break
+
+        STATUS="$(cat /sys/class/power_supply/battery/status)"
+        if [ "$STATUS" = "Charging" ]; then
+                echo "Battery is charging"
+        else
+                echo "Battery is not charging"
+                break
+        fi
+	# sleep for one minute
+        echo +60 >/sys/class/rtc/rtc0/wakealarm
+        echo s2idle >/sys/power/mem_sleep
+        echo mem >/sys/power/state
+        echo 0 >/sys/class/rtc/rtc0/wakealarm
+
+done
+
+if [ $BUTTON = 1 ] ; then
+        echo "Power button pressed" 
+#	echo 1 >/sys/epd/logo
+        /sbin/reboot
+else
+        echo "No USB/AC power, shutting down" 
+        /sbin/poweroff
+fi
+

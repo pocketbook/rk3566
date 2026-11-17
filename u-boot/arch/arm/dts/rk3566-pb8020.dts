@@ -1,0 +1,11 @@
+/*
+ * SPDX-License-Identifier:     GPL-2.0+
+ *
+ * (C) Copyright 2020 Rockchip Electronics Co., Ltd
+ */
+
+/dts-v1/;
+#include "rk3568-evb.dts"
+#include <dt-bindings/gpio/gpio.h>
+
+

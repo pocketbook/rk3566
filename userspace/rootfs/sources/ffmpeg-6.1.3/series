@@ -1,0 +1,8 @@
+0001-add-chromium-related-function.patch
+0001-swscale-x86-yuv2rgb-Fix-build-without-SSSE3.patch
+0002-avcodec-vaapi_h264-skip-decode-if-pic-has-no-slices.patch
+0003-libavutil-Fix-mips-build.patch
+0004-configure-add-extralibs-to-extralibs_xxx.patch
+0005-avcodec-mmaldec-Fix-build-error.patch
+0006-avcodec-pcm-bluray-dvd-Use-correct-pointer-types-on-.patch
+0007-avutil-hwcontext-vaapi-use-the-correct-type.patch

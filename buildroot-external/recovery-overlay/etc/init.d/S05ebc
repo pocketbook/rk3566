@@ -1,0 +1,13 @@
+#!/bin/sh
+
+LOGO_ARGS=
+PBENV=`blkid | sed -n '/PARTLABEL="pbenv"/s/:.*//p'`
+if [ -n "$PBENV" ] ; then
+	LOGO=`hwconfig.app -p $PBENV | awk -F = '/^device_bootlogo_main=/ {print $2}'`
+	LOGO_OFF=`hwconfig.app -p $PBENV | awk -F = '/^device_bootlogo_main_offset=/ {print $2}'`
+	[ -n "$LOGO" ] && LOGO_ARGS="logo=$LOGO logo_offset=$LOGO_OFF"
+fi
+
+insmod /lib/modules/ebc-linux.ko $LOGO_ARGS
+
+

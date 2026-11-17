@@ -1,0 +1,11 @@
+0001-Make-SoX-support-uclibc-based-toolchains.patch
+0002-configure.ac-put-back-disable-stack-protector.patch
+0003-configure.ac-fix-static-linking-with-id3tag.patch
+0004-configure.ac-fix-static-linking-with-magic.patch
+0005-configure.ac-fix-static-linking-with-sndfile.patch
+0006-voc-word-width-should-never-be-0-to-avoid-division-b.patch
+0007-hcom-validate-dictsize.patch
+0008-phere-avoid-integer-underflow.patch
+0009-formats-aiff-reject-implausibly-large-number-of-chan.patch
+0010-formats-reject-implausible-rate.patch
+0011-CVE-2023-32627-Filter-null-sampling-rate-in-VOC-code.patch

@@ -1,0 +1,14 @@
+0001-networking-libiproute-use-linux-if_packet.h-instead-.patch
+0002-Makefile.flags-strip-non-l-arguments-returned-by-pkg.patch
+0003-libbb-sockaddr2str-ensure-only-printable-characters-.patch
+0004-nslookup-sanitize-all-printed-strings-with-printable.patch
+0006-menuconfig-GCC-failing-saying-ncurses-is-not-found.patch
+0007-tc-Fix-compilation-with-Linux-v6.8-rc1.patch
+0008-awk.c-fix-CVE-2023-42366-bug-15874.patch
+0009-halt-Support-rebooting-with-arg.patch
+0009-hwclock-Check-for-SYS_settimeofday-before-calling-sy.patch
+0010-Support-PARTLABEL.patch
+0011-Support-bypassing-Unicode-when-printing.patch
+0012-rtc-Use-UTC-by-default-when-parsing-adjtime-file.patch
+0013-syslogd-dont-strip-escape-characher.patch
+0014-reboot-with-args-ignore-alien-signals.patch

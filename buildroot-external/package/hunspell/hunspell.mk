@@ -1,0 +1,40 @@
+ifndef HUNSPELL_SITE
+HUNSPELL_SITE = git@gitlab.obreey-products.com:PocketBook/hunspell.git
+HUNSPELL_SITE_METHOD = git
+HUNSPELL_VERSION=origin/master
+HUNSPELL_LICENSE = MPL-1.1 or GPL-2.0+ or LGPL-2.1+
+HUNSPELL_LICENSE_FILES = COPYING COPYING.LESSER COPYING.MPL
+HUNSPELL_INSTALL_IMAGES = NO
+HUNSPELL_INSTALL_TARGET = YES
+HUNSPELL_INSTALL_HOST = NO
+HUNSPELL_INSTALL_STAGING = YES
+HUNSPELL_DEPENDENCIES = host-gawk
+
+HUNSPELL_CONFIGURE_OPTS = \
+        --host=$(GNU_TARGET_NAME) \
+	--target=$(GNU_TARGET_NAME) \
+	--prefix=/usr
+
+HUNSPELL_CONFIGURE_ENV = \
+	AWK=$(HOST_DIR)/bin/gawk
+
+define HUNSPELL_CONFIGURE_CMDS
+cd $(@D) &&  autoreconf -vfi && $(HUNSPELL_CONFIGURE_ENV) ./configure $(TARGET_CONFIGURE_OPTS) $(HUNSPELL_CONFIGURE_OPTS)
+endef
+
+define HUNSPELL_BUILD_CMDS
+cd $(@D) &&  $(MAKE)
+endef
+
+define HUNSPELL_INSTALL_TARGET_CMDS
+cd $(@D) && $(MAKE) install DESTDIR=$(TARGET_DIR)
+endef
+
+define HUNSPELL_INSTALL_STAGING_CMDS
+cd $(@D) && $(MAKE) install DESTDIR=$(STAGING_DIR)
+endef
+
+$(eval $(generic-package))
+
+endif
+

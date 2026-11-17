@@ -1,0 +1,3 @@
+0001-arm-plt.patch
+0002-sparc-add-missing-library.h-include.patch
+0003-configure.ac-fix-autoreconf-with-autoconf-2.70.patch

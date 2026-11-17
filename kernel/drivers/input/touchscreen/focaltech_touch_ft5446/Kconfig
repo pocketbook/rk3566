@@ -1,0 +1,25 @@
+#
+# Focaltech Touchscreen driver configuration
+#
+
+config TOUCHSCREEN_FTS_5446
+    tristate "Focaltech FT5446 Touchscreen"
+    default m
+    help
+      Say Y here if you have Focaltech touch panel.
+      If unsure, say N.
+
+config FT_AUTO_UPGRADE
+	bool "FW auto upgrade"
+	depends on TOUCHSCREEN_FTS_5446
+	default n
+	help
+		Say Y enable fw auto upgrade.
+		If unsure, say N.
+
+config FT_UPGRADE_FW_FILE
+	depends on TOUCHSCREEN_FTS_5446
+	string "Firmware & config file path"
+	default "include/pb584/fw_sample.h"
+	help
+	  path to the firmware & config file.

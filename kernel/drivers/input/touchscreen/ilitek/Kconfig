@@ -1,0 +1,23 @@
+#
+# Focaltech Touchscreen driver configuration
+#
+
+config TOUCHSCREEN_ILITEK
+    tristate "Ilitek Touchscreen"
+    default m
+    help
+      Say Y here if you have Focaltech touch panel.
+      If unsure, say N.
+
+config ILITEK_UPGRADE_FW_FILE
+    depends on TOUCHSCREEN_ILITEK
+    string "Built-in firmware file"
+    default "IL250120J4103E00_V07000004_00000000_0xA9C9_20251205.ili"
+    help
+      Panel firmware compiled into the driver as CTPM_FW, used when
+      /usr/lib/firmware/ilitek_fw.ili is absent. Path is relative to the
+      driver directory. This is per-panel: the boot update compares the
+      IC's block CRCs against this file and reflashes on any mismatch,
+      and the IC-name guard only checks the controller (identical across
+      panels), so a blob from another panel would be reflashed on every
+      boot. Set it in the device defconfig.

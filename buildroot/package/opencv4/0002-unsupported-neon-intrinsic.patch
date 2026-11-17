@@ -1,0 +1,12 @@
+--- a/hal/carotene/src/vround_helper.hpp
++++ b/hal/carotene/src/vround_helper.hpp
+@@ -45,6 +45,9 @@
+
+ #ifdef CAROTENE_NEON
+
++#undef __ARM_ARCH
++#define __ARM_ARCH 7
++
+ /**
+  * This helper header is for rounding from float32xN to uin32xN or int32xN to nearest, ties to even.
+  * See https://en.wikipedia.org/wiki/Rounding#Rounding_half_to_even

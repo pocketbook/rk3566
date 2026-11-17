@@ -1,0 +1,16 @@
+--- a/init/halt.c	2026-01-20 18:24:45.894486031 +0200
++++ b/init/halt.c	2026-01-20 18:17:44.794743657 +0200
+@@ -181,6 +181,13 @@
+ 	if ((pid = fork()))
+ 		return pid < 0 ? pid : 0;
+ 
++	/* stay immune to alien signals, we expect SIGTERM */
++	signal(SIGINT,  SIG_IGN); 
++	signal(SIGQUIT, SIG_IGN);
++	signal(SIGHUP,  SIG_IGN);
++	signal(SIGTSTP, SIG_IGN);
++	signal(SIGPIPE, SIG_IGN);
++
+ 	/* Handle signal and reboot in child thread */
+ 	sigemptyset(&sa.sa_mask);
+ 	sa.sa_flags = 0;

@@ -1,0 +1,229 @@
+#!/bin/sh
+
+# check if device initialized
+[ $(dd if=/dev/pbenv bs=512 skip=1 count=1 2>/dev/null | crc32) != b2aa7578 ] && exit 0
+
+vendor_storage_r()
+{
+	VENDOR_ID=$1
+	vendor_storage  -r $VENDOR_ID -t string|awk -F : '/^\[INFO\]/ {print $2}'
+}
+vendor_vcom()
+{
+	vendor_storage_r VENDOR_CUSTOM_ID_11
+}
+vendor_sn()
+{
+	vendor_storage_r VENDOR_SN_ID
+}
+vendor_waveform()
+{
+	vendor_storage_r VENDOR_CUSTOM_ID_20
+}
+
+UDCSTATE="sys/class/udc/fcc00000.dwc3/state"
+LUN="/sys/kernel/config/usb_gadget/rockchip/functions/mass_storage.0/lun.0/file"
+MMCSERIAL="/sys/block/mmcblk0/device/serial"
+
+# commit successful boot
+swupdate_ab -s
+
+echo -e "\n\n\033[36mStarting ZeroFW, press enter within 2 sec to disable\033[0m\n"
+read -t 2 && exit 234
+
+mkdir -p /mnt/ext1 /mnt/secure
+
+# create user and secure filesystem if needed
+blkid /dev/user_int | grep -q 'vfat' || mkfs.vfat /dev/user_int
+blkid /dev/secure | grep -q 'ext[234]' || mkfs.ext4 -F /dev/secure
+
+mount -a
+
+chown -R 102:102 /mnt/secure
+chmod 770 /mnt/secure
+
+# resize userfs
+fatresize -i /dev/user_int
+MINSIZE=$(fatresize -i /dev/user_int | awk '/Min size:/ {print $3}')
+MAXSIZE=$(fatresize -i /dev/user_int | awk '/Max size:/ {print $3}')
+MAXSIZE=$((MAXSIZE-32*1024*1024))
+while [ $MAXSIZE -gt $MINSIZE ] ; do
+        # Somehow fatresize cannot resize to max size
+        # Try to resize with fatresize, not always work
+        fatresize -s $MAXSIZE /dev/user_int && break
+        MAXSIZE=$((MAXSIZE - 1024 * 1024))
+done
+
+fsck.vfat -y -v /dev/user_int
+LABEL=$(awk -F = '/^volume=/ {print $2}' /ebrmain/config/device.cfg)
+/usr/sbin/fatlabel /dev/user_int "$LABEL"
+
+# prepare usb interface
+/etc/init.d/usb start
+
+echo 0 >/proc/sys/kernel/printk
+
+ypos=70
+ystep=40
+
+show_string_at() {
+	Y=$1
+	shift
+	echo -e "\033[32m$1\033[0m" >&2
+	show_string -s "$*" -y $Y >/dev/null 2>&1
+}
+
+say() {
+	show_string_at $ypos "$*"
+	sleep 1
+	ypos=$((ypos + ystep))
+}
+
+devicename=`cat /etc/devicename| sed -e "s/PocketBook//"`
+
+show_string -e -f
+sleep 1
+say "Firmware `cat /boot/REV` for $devicename"
+
+#check user partition and format if it needs
+say "Check user partition..."
+need_format=
+dosfsck -a /dev/user_int
+mount /dev/user_int /mnt/ext1
+if ! [ -f /mnt/ext1/README.1ST ]; then
+	need_format=yes
+fi
+umount /mnt/ext1
+
+if [ -n "$need_format" ]; then
+	say "USER FS ... formatting" 
+        mkfs.vfat -n "PB$devicename" /dev/user_int
+        if [ $? = 0 ] ; then
+                say "Formatting OK"
+        else
+                say "Formatting USERFS fails"
+        fi
+else
+	say "USER FS already formatted" 
+fi
+mount /dev/user_int /mnt/ext1
+
+rm -f /mnt/ext1/README.1ST
+echo "SDSN: $(cat $MMCSERIAL)" >> /mnt/ext1/README.1ST
+    id="$(cat /proc/cpu_id | tr -d ' \n')"
+    SID="${id}0000000000000000"
+echo "SID: $SID" >> /mnt/ext1/README.1ST
+echo "Factory SN: $(vendor_sn)
+Factory vcom: $(vendor_vcom)
+Factory waveform: $(vendor_waveform)" >> /mnt/ext1/README.1ST
+echo "
+SWUPDATE.BIN
+waveform (*.wbf | *.awf)
+hwdevice (serial number; MAC address)
+vcom (in millivolts)
+network.conf (wpa_supplicant config file)
+need here.
+
+Remove this file to format filesystem
+" >>  /mnt/ext1/README.1ST
+
+#run rename
+RENAME_SCRIPT="/mnt/ext1/rename.sh"
+
+if [ -f "$RENAME_SCRIPT" ]; then
+    echo "Found rename script, applying renames"
+    "$RENAME_SCRIPT"
+else
+    echo "No rename script found, skipping"
+fi
+
+umount /mnt/ext1
+	
+say "Place *.wbf hwdevice vcom network.conf"
+say " to internal memory"
+say " Ensure SWUPDATE.BIN presents too"
+sync
+sleep 1
+
+say "Starting USB file storage"
+/lib/modules/ins_usb_mod.sh
+
+say "  mmcblk0 sn=$(cat $MMCSERIAL)"
+say "   -= Push PWRKEY button to start update! =-" 
+
+(
+	INPUTDEV=`grep pwrkey /sys/class/input/event*/device/name | sed 's/.device.*//g;s/sys.class/dev/'`
+	echo "Pwrkey: $INPUTDEV"
+
+	TMOUT=$((`date +%s` + 15*60 + 59))
+	RUN_UPDATE=false
+	USBLINK=false
+
+	while true ; do
+		evtest --query $INPUTDEV EV_KEY 116
+		[ $? -eq 10 ] && say "PWRKEY press detected" && RUN_UPDATE=true
+		[ -z "$(cat $LUN)" ] && say "USB storage ejected" && RUN_UPDATE=true
+		[ "$(cat $UDCSTATE)" = "configured" ] && USBLINK=true
+		[ "$(cat $UDCSTATE)" != "configured" -a $USBLINK = true ] && say "USB storage disconnected" && RUN_UPDATE=true
+		if [ $RUN_UPDATE = true ] ; then
+			/lib/modules/rm_usb_mod.sh
+			sleep 2
+			show_string -e -f
+                        ypos=70
+			sync
+			sleep 2
+			say "Force check filesystem"
+			dosfsck -a /dev/user_int
+			sync
+			sleep 2
+			mount /dev/user_int /mnt/ext1
+			say "files in memory:"
+			if ! [ -f /mnt/ext1/README.1ST ] ; then
+				say "Reboot to format and try again"
+				sleep 5
+	                	reboot -f
+			fi
+
+			cd /mnt/ext1
+			for F in SWUPDATE.BIN vcom hwdevice *.wbf network.conf ; do
+				if [ ! -f $F ] ; then
+					say "  $F missing"
+					some_files_missing=y
+				else 
+					say "  $F ok"
+				fi
+			done
+			cd /
+
+			if [ -n "$some_files_missing" ] ; then
+				say "Some files are missing"
+				say "reboot and add it"
+				umount /mnt/ext1
+				sleep 5
+				sync
+				reboot -f
+			fi
+
+			say "All checks passed"
+	                say "Reboot to update mode" 
+			umount /mnt/ext1
+	                reboot recovery
+		fi
+
+		T1=$(((TMOUT-`date +%s`)/60))
+		[ "$T1" = 0 ] && break
+		if [ "$T1" != "$T0" ] ; then
+			show_string_at 30 "$T1 min to poweroff.."
+			T0=$T1
+		fi
+
+		sleep .1
+	done
+
+	say "Power off" 
+	sync
+	poweroff -f
+) &
+
+exit 234
+

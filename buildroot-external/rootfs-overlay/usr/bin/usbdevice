@@ -1,0 +1,15 @@
+#!/bin/sh
+# Minimal USB gadget (re)bind helper.
+
+
+G=/sys/kernel/config/usb_gadget/rockchip
+
+[ -d "$G" ] || exit 0
+
+# Already bound? Nothing to do -- writing UDC again would return EBUSY.
+[ -n "$(cat "$G/UDC" 2>/dev/null)" ] && exit 0
+
+UDC=$(ls /sys/class/udc/ 2>/dev/null | head -n1)
+[ -n "$UDC" ] || exit 0
+
+echo "$UDC" > "$G/UDC" 2>/dev/null

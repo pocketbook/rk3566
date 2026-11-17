@@ -1,0 +1,6 @@
+0001-configure-fix-main-prototype.patch
+0002-include-stdio.h-to-remove-warning.patch
+0003-FTBFS-fix-missing-includes.patch
+0004-Fix-build-with-GCC-15.patch
+0005-remove-old-prototypes.patch
+0006-remove-old-prototypes.patch

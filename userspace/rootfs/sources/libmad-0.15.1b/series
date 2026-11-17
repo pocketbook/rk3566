@@ -1,0 +1,4 @@
+libmad_0.15.1b-10.diff.gz
+0001-mips-h-constraint-removal.patch
+0002-configure-ac-automake-foreign.patch
+0003-drop-GCC-fforce-mem-option.patch

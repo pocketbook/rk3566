@@ -1,0 +1,27 @@
+diff -ruN ../../Download/wpa_supplicant/wpa_supplicant-2.10/wpa_supplicant/Makefile wpa_supplicant-2.10/wpa_supplicant/Makefile
+--- a/wpa_supplicant/Makefile	2022-01-16 22:51:29.000000000 +0200
++++ b/wpa_supplicant/Makefile	2022-04-13 14:49:06.411427159 +0300
+@@ -55,6 +60,10 @@
+ CONFIG_TDLS_TESTING=y
+ endif
+ 
++ifdef CONFIG_POCKETBOOK
++CFLAGS += -DPOCKETBOOK
++endif
++
+ mkconfig:
+ 	@if [ -f .config ]; then \
+ 		echo '.config exists - did not replace it'; \
+diff -ruN ../../Download/wpa_supplicant/wpa_supplicant-2.10/wpa_supplicant/notify.c wpa_supplicant-2.10/wpa_supplicant/notify.c
+--- a/wpa_supplicant/notify.c	2022-01-16 22:51:29.000000000 +0200
++++ b/wpa_supplicant/notify.c	2022-04-13 14:46:13.652686057 +0300
+@@ -109,7 +109,8 @@
+ 
+ 	sme_state_changed(wpa_s);
+ 
+-#ifdef ANDROID
++#if defined(ANDROID) || defined(POCKETBOOK)
++#warning "BUILD WITH CONFIG_POCKETBOOK"
+ 	wpa_msg_ctrl(wpa_s, MSG_INFO, WPA_EVENT_STATE_CHANGE
+ 		     "id=%d state=%d BSSID=" MACSTR " SSID=%s",
+ 		     wpa_s->current_ssid ? wpa_s->current_ssid->id : -1,

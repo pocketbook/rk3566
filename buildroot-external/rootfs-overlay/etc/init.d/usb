@@ -1,0 +1,131 @@
+#!/bin/sh
+
+set -e
+
+CONFIGFS_DIR=/sys/kernel/config
+USB_GROUP=rockchip
+USB_STRINGS_ATTR=strings/0x409
+USB_GADGET_DIR=$CONFIGFS_DIR/usb_gadget/$USB_GROUP
+USB_GADGET_STRINGS_DIR=$USB_GADGET_DIR/$USB_STRINGS_ATTR
+USB_FUNCTIONS_DIR=$USB_GADGET_DIR/functions
+USB_CONFIGS_DIR=$USB_GADGET_DIR/configs/b.1
+USB_CONFIGS_STRINGS_DIR=$USB_CONFIGS_DIR/$USB_STRINGS_ATTR
+USB_OSDESC=$USB_GADGET_DIR/os_desc/c.1
+USB_UDC=$(ls /sys/class/udc/ | head -n 1)
+USB_VID=0x1d6b
+USB_PID=0x0104
+USB_CONFIG="rndis_ums"
+
+USB_SERIAL=$(grep Serial /proc/cpuinfo | cut -d':' -f2)
+
+USB_UMS_INSTANCE=mass_storage.0
+USB_RNDIS_INSTANCE=rndis.0
+USB_ADB_INSTANCE=ffs.adb
+USB_HID_INSTANCE=hid.0
+
+UMS_FILE_INT=/dev/block/by-name/userdata
+UMS_FILE_EXT=/dev/mmcblk1
+UMS_FILE_EXTP=/dev/mmcblk1p1
+UMS_MOUNTPOINT_INT=/mnt/ext1
+UMS_MOUNTPOINT_EXT=/mnt/ext2
+UMS_FSTYPE=vfat
+
+HID_PROTOCOL=0
+HID_SUBCLASS=0
+HID_REPORT_LENGTH=12 # ReportID 0.0.0.InRange.Invert.Eraser.Barrel.Tip X:2 Y:2 Pressure:2 Xtilt:2 Ytilt:2
+
+HID_DESCRIPTOR="\x05\x0d\x09\x02\xa1\x01\x85\x01\x09\x20\xa1\x00\x09\x42\x09\x44\x09\x45\x09\x3c\x09\x32\x15\x00\x25\x01\x75\x01\x95\x05\x81\x02\x95\x03\x81\x03\x05\x01\x75\x10\x95\x01\xa4\x55\x0d\x65\x33\x09\x30\x35\x00\x46\x00\x40\x15\x00\x26\x00\x40\x81\x02\x09\x31\x35\x00\x46\x80\x25\x15\x00\x26\x80\x25\x81\x02\xb4\x05\x0d\x09\x30\x15\x00\x26\xff\x0f\x81\x02\x09\x3d\x09\x3e\x16\x01\x80\x26\xff\x7f\x95\x02\x81\x02\xc0\xc0"
+
+function usb_start() {
+
+	mountpoint -q $CONFIGFS_DIR || mount -t configfs none $CONFIGFS_DIR
+
+	mkdir -p $USB_GADGET_DIR $USB_CONFIGS_DIR
+	mkdir -p $USB_GADGET_STRINGS_DIR
+	echo $USB_SERIAL >$USB_GADGET_STRINGS_DIR/serialnumber
+	echo Obreey >$USB_GADGET_STRINGS_DIR/manufacturer
+	echo ${usb_product_name:-Pocketbook} >$USB_GADGET_STRINGS_DIR/product
+	echo $USB_VID >$USB_GADGET_DIR/idVendor
+	echo $USB_PID >$USB_GADGET_DIR/idProduct
+	echo 0x0100 >$USB_GADGET_DIR/bcdDevice
+	echo 0x0200 >$USB_GADGET_DIR/bcdUSB
+	echo 0xEF >$USB_GADGET_DIR/bDeviceClass
+	echo 0x02 >$USB_GADGET_DIR/bDeviceSubClass
+	echo 0x01 >$USB_GADGET_DIR/bDeviceProtocol
+	echo 1       >$USB_GADGET_DIR/os_desc/use
+	echo 0xcd    >$USB_GADGET_DIR/os_desc/b_vendor_code
+	echo MSFT100 >$USB_GADGET_DIR/os_desc/qw_sign
+	echo 500 >$USB_CONFIGS_DIR/MaxPower
+
+	mkdir -p $USB_CONFIGS_STRINGS_DIR
+	echo "$USB_CONFIG" >$USB_CONFIGS_STRINGS_DIR/configuration
+
+	ln -s $USB_CONFIGS_DIR $USB_OSDESC
+
+	# rndis
+	mkdir $USB_FUNCTIONS_DIR/$USB_RNDIS_INSTANCE
+	echo RNDIS >$USB_FUNCTIONS_DIR/$USB_RNDIS_INSTANCE/os_desc/interface.rndis/compatible_id
+	echo 5162001 >$USB_FUNCTIONS_DIR/$USB_RNDIS_INSTANCE/os_desc/interface.rndis/sub_compatible_id
+	ln -s $USB_FUNCTIONS_DIR/$USB_RNDIS_INSTANCE $USB_CONFIGS_DIR
+
+	# mass storage
+	mkdir $USB_FUNCTIONS_DIR/$USB_UMS_INSTANCE
+	ln -s $USB_FUNCTIONS_DIR/$USB_UMS_INSTANCE $USB_CONFIGS_DIR
+
+	# adb
+	#mkdir $USB_FUNCTIONS_DIR/$USB_ADB_INSTANCE
+	#mkdir -p /dev/usb-ffs/adb
+	#mount -t functionfs adb /dev/usb-ffs/adb -o uid=2000,gid=2000
+	#/sbin/ifup -f lo 2>/dev/null
+	#/usr/bin/adbd &
+	#usleep 50000
+	#ln -s $USB_FUNCTIONS_DIR/$USB_ADB_INSTANCE $USB_CONFIGS_DIR
+
+        # hid
+	if [ -f /mnt/secure/enable_hidg ] ; then
+		mkdir $USB_FUNCTIONS_DIR/$USB_HID_INSTANCE
+	        echo $HID_PROTOCOL > $USB_FUNCTIONS_DIR/$USB_HID_INSTANCE/protocol
+	        echo $HID_SUBCLASS > $USB_FUNCTIONS_DIR/$USB_HID_INSTANCE/subclass
+	        echo $HID_REPORT_LENGTH > $USB_FUNCTIONS_DIR/$USB_HID_INSTANCE/report_length
+	        echo -en $HID_DESCRIPTOR > $USB_FUNCTIONS_DIR/$USB_HID_INSTANCE/report_desc
+	        ln -s $USB_FUNCTIONS_DIR/$USB_HID_INSTANCE $USB_CONFIGS_DIR
+	fi
+
+	# activate usb gadget
+	echo "$USB_UDC" >$USB_GADGET_DIR/UDC
+
+
+}
+
+function usb_stop
+{
+	set +e
+	echo >$USB_GADGET_DIR/UDC
+	rm -f $USB_OSDESC
+	rm -f $USB_CONFIGS_DIR/*.0
+	rmdir $USB_CONFIGS_DIR/strings/*
+	rmdir $USB_FUNCTIONS_DIR/*.0
+}
+
+function usb_to_pc
+{
+	echo $UMS_FILE_INT > $USB_FUNCTIONS_DIR/$USB_UMS_INSTANCE/lun.0/file
+}
+
+function usb_to_device
+{
+	echo > $USB_FUNCTIONS_DIR/$USB_UMS_INSTANCE/lun.0/file
+}
+
+FUNC=${1:-${0##*/}}
+
+if [ "$FUNC" = "ins_usb_mod.sh" ] ; then
+	usb_to_pc 
+elif [ "$FUNC" = "rm_usb_mod.sh" ] ; then
+       	usb_to_device
+elif [ "$FUNC" = "start" ] ; then
+	usb_start
+elif [ "$FUNC" = "stop" ] ; then
+	usb_stop
+fi
+

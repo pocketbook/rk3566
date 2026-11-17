@@ -1,0 +1,8 @@
+config BR2_PACKAGE_RKEBC
+	bool "rkebc"
+	select BR2_PACKAGE_ROCKCHIP_RGA
+	select BR2_PACKAGE_LZ4
+	select BR2_PACKAGE_INIH
+	default y
+	help
+		rock-chips e-ink service

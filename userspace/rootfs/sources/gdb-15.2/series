@@ -1,0 +1,9 @@
+0001-ppc-ptrace-Define-pt_regs-uapi_pt_regs-on-GLIBC-syst.patch
+0002-sh-ptrace-Define-pt_-dsp-regs-uapi_pt_-dsp-regs-on-G.patch
+0003-use-asm-sgidefs.h.patch
+0004-gdbserver-fix-build-for-m68k.patch
+0005-nat-fork-inferior-include-linux-ptrace.h.patch
+0006-Fix-getrandom-compile-for-uclibc-v1.0.35.patch
+0007-fix-musl-build-on-riscv.patch
+0008-gdbserver-Makefile.in-fix-NLS-build.patch
+0009-gdb-Fix-native-build-on-xtensa.patch

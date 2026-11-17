@@ -1,0 +1,37 @@
+config BR2_PB_DEVICE
+	string "Pocketbook device model"
+	default ""
+
+config BR2_PB_VARIANT
+	string "Pocketbook device variant"
+	default "U"
+
+config BR2_HWCONFIG_VALUE
+	int "Override HWCONFIG index (leave 0 to use hwconfig from pbenv)"
+	default 0
+
+config BR2_HWCONFIG_PBENV_VALUE
+	string "Use this HWCONFIG value from pbenv"
+	depends on BR2_HWCONFIG_VALUE = 0
+    help
+      Specify the HWCONFIG value to be used from the pbenv environment
+      when BR2_HWCONFIG_VALUE is set to 0
+
+menu "Pre-bulid scripts"
+source "../buildroot-external/pre-scripts/Config.in"
+endmenu
+
+menu "Post-bulid scripts"
+source "../buildroot-external/post-scripts/Config.in"
+endmenu
+
+source "../buildroot-external/package/hunspell/Config.in"
+
+config BR2_PREBUILD_CLEANUP_EXTERNAL
+	bool "Cleanup external packages, re-download if git source updated"
+	default n
+
+
+source "../buildroot-external/package/glmark2/Config.in"
+
+

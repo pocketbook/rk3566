@@ -1,0 +1,112 @@
+#!/bin/sh
+
+set -e
+
+CONFIGFS_DIR=/sys/kernel/config
+USB_GROUP=rockchip
+USB_STRINGS_ATTR=strings/0x409
+USB_GADGET_DIR=$CONFIGFS_DIR/usb_gadget/$USB_GROUP
+USB_GADGET_STRINGS_DIR=$USB_GADGET_DIR/$USB_STRINGS_ATTR
+USB_FUNCTIONS_DIR=$USB_GADGET_DIR/functions
+USB_CONFIGS_DIR=$USB_GADGET_DIR/configs/b.1
+USB_CONFIGS_STRINGS_DIR=$USB_CONFIGS_DIR/$USB_STRINGS_ATTR
+USB_UDC=$(ls /sys/class/udc/ | head -n 1)
+USB_VID=0x1d6b
+USB_PID=0x0104
+USB_CONFIG="rndis_ums"
+
+USB_SERIAL=$(grep Serial /proc/cpuinfo | cut -d':' -f2)
+
+USB_UMS_INSTANCE=mass_storage.0
+USB_RNDIS_INSTANCE=rndis.0
+USB_ADB_INSTANCE=ffs.adb
+
+UMS_FILE_INT=/dev/block/by-name/userdata
+UMS_FILE_EXT=/dev/mmcblk1
+UMS_FILE_EXTP=/dev/mmcblk1p1
+UMS_MOUNTPOINT_INT=/mnt/ext1
+UMS_MOUNTPOINT_EXT=/mnt/ext2
+UMS_FSTYPE=vfat
+
+function usb_start() {
+
+	mountpoint -q $CONFIGFS_DIR || mount -t configfs none $CONFIGFS_DIR
+
+	mkdir -p $USB_GADGET_DIR $USB_CONFIGS_DIR
+	mkdir -p $USB_GADGET_STRINGS_DIR
+	echo $USB_SERIAL >$USB_GADGET_STRINGS_DIR/serialnumber
+	echo Obreey >$USB_GADGET_STRINGS_DIR/manufacturer
+	echo ${usb_product_name:-Pocketbook} >$USB_GADGET_STRINGS_DIR/product
+	echo $USB_VID >$USB_GADGET_DIR/idVendor
+	echo $USB_PID >$USB_GADGET_DIR/idProduct
+	echo 0x0100 >$USB_GADGET_DIR/bcdDevice
+	echo 0x0200 >$USB_GADGET_DIR/bcdUSB
+	echo 0xEF >$USB_GADGET_DIR/bDeviceClass
+	echo 0x02 >$USB_GADGET_DIR/bDeviceSubClass
+	echo 0x01 >$USB_GADGET_DIR/bDeviceProtocol
+	echo 1       >$USB_GADGET_DIR/os_desc/use
+	echo 0xcd    >$USB_GADGET_DIR/os_desc/b_vendor_code
+	echo MSFT100 >$USB_GADGET_DIR/os_desc/qw_sign
+	echo 500 >$USB_CONFIGS_DIR/MaxPower
+
+	mkdir -p $USB_CONFIGS_STRINGS_DIR
+	echo "$USB_CONFIG" >$USB_CONFIGS_STRINGS_DIR/configuration
+
+	ln -s $USB_CONFIGS_DIR $USB_GADGET_DIR/os_desc/c.1
+
+	# rndis
+	mkdir $USB_FUNCTIONS_DIR/$USB_RNDIS_INSTANCE
+	echo RNDIS >$USB_FUNCTIONS_DIR/$USB_RNDIS_INSTANCE/os_desc/interface.rndis/compatible_id
+	echo 5162001 >$USB_FUNCTIONS_DIR/$USB_RNDIS_INSTANCE/os_desc/interface.rndis/sub_compatible_id
+	ln -s $USB_FUNCTIONS_DIR/$USB_RNDIS_INSTANCE $USB_CONFIGS_DIR
+
+	# mass storage
+	mkdir $USB_FUNCTIONS_DIR/$USB_UMS_INSTANCE
+	ln -s $USB_FUNCTIONS_DIR/$USB_UMS_INSTANCE $USB_CONFIGS_DIR
+
+	# adb
+	#mkdir $USB_FUNCTIONS_DIR/$USB_ADB_INSTANCE
+	#mkdir -p /dev/usb-ffs/adb
+	#mount -t functionfs adb /dev/usb-ffs/adb -o uid=2000,gid=2000
+	#/sbin/ifup -f lo 2>/dev/null
+	#/usr/bin/adbd &
+	#usleep 50000
+	#ln -s $USB_FUNCTIONS_DIR/$USB_ADB_INSTANCE $USB_CONFIGS_DIR
+
+	# activate usb gadget
+	echo "$USB_UDC" >$USB_GADGET_DIR/UDC
+
+	# configure rndis metwork
+        NET=192.168.205
+        UDHCONF=/var/run/udhcpd.conf
+        usleep 250000
+        ifconfig usb0 up $NET.1
+        echo "start $NET.2" >$UDHCONF
+        echo "end $NET.254" >>$UDHCONF
+        echo "interface usb0" >>$UDHCONF
+        echo "opt subnet 255.255.255.0" >>$UDHCONF
+        /sbin/udhcpd $UDHCONF
+	ln -s /etc/dropbear /var/run/dropbear
+	/sbin/dropbear -p $NET.1:22
+}
+
+function usb_to_pc
+{
+	echo $UMS_FILE_INT > $USB_FUNCTIONS_DIR/$USB_UMS_INSTANCE/lun.0/file
+}
+
+function usb_to_device
+{
+	echo > $USB_FUNCTIONS_DIR/$USB_UMS_INSTANCE/lun.0/file
+}
+
+FUNC=${1:-${0##*/}}
+
+if [ "$FUNC" = "ins_usb_mod.sh" ] ; then
+	usb_to_pc 
+elif [ "$FUNC" = "rm_usb_mod.sh" ] ; then
+       	usb_to_device
+elif [ "$FUNC" = "start" ] ; then
+	usb_start
+fi
+

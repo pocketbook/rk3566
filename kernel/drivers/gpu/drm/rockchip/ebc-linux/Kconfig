@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: GPL-2.0
+
+menuconfig ROCKCHIP_EBC_LINUX
+	tristate "EBC"
+	depends on ARCH_ROCKCHIP
+	select LZ4_DECOMPRESS
+	help
+	  ebc module for linux sdk.
+
+if ROCKCHIP_EBC_LINUX
+
+config EBC_TPS65185_SENSOR
+    bool "eink pmic Tps65185"
+
+config EBC_SY7636A_PMIC
+	bool "EINK PMIC SY7636A Support"
+	help
+	  If you say yes here you get support for the Silergy SY7636A PMIC.
+
+config EBC_SY7673A_PMIC
+	bool "EINK PMIC SY7673A Support"
+	help
+	  If you say yes here you get support for the Silergy SY7673A PMIC.
+
+config EBC_USE_DRM
+	bool "Use DRM"
+	default y
+	help
+	  use DRM
+
+config BOOTLOGO_FILE
+	bool "Read the dynamic boot logo from a store by default"
+	default n
+	help
+	  Read the dynamic boot logo from BOOTLOGO_FILE_PATH over the logo region
+	  u-boot stages out of the logo partition, so the store replaces the
+	  flashed default whenever it is there. The store has to be the one
+	  configured for the device in hwlib (device_bootlogo_cfg()), which is what
+	  the monitor writes the logo to.
+
+
+config BOOTLOGO_FILE_PATH
+	string "Boot logo store"
+	depends on BOOTLOGO_FILE
+	default "/mnt/secure/bootlogo.bin"
+	help
+	  A regular file or a partition - it is the same read either way. For a
+	  file, its filesystem has to be mounted before this driver is loaded, see
+	  S05ebc in the rootfs overlay. Overridden by the logo= module parameter.
+
+config BOOTLOGO_FILE_OFFSET
+	hex "Offset of the logo inside BOOTLOGO_FILE_PATH"
+	depends on BOOTLOGO_FILE
+	default 0x0
+	help
+	  Leave at 0 for a store holding a single logo. A non zero value lets
+	  BOOTLOGO_FILE_PATH name a partition with the logo somewhere inside it.
+	  Overridden by the logo_offset= module parameter.
+
+endif

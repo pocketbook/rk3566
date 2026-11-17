@@ -1,0 +1,4 @@
+0001-Reproducible-build-do-not-leak-compiler-path.patch
+0002-Configure-use-ELFv2-ABI-on-some-ppc64-big-endian-sys.patch
+0003-Revert-Fix-static-builds.patch
+0004-Serialize-install-process-to-avoid-multiple-make-dep.patch

@@ -1,0 +1,4 @@
+config BR2_PACKAGE_HUNSPELL
+        bool "Build HUNSPELL"
+        default y
+

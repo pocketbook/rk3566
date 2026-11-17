@@ -1,0 +1,33 @@
+--- ./lib/vtls/openssl.c	2025-02-12 14:22:48.144886440 +0200
++++ ../libcurl-8.12.0/lib/vtls/openssl.c	2025-02-12 14:39:45.691995682 +0200
+@@ -5210,10 +5210,14 @@
+         goto out;
+       }
+       sslerror = ERR_get_error();
++      int sockerr = SOCKERRNO;
++#if (OPENSSL_VERSION_NUMBER >= 0x30200000L)
++      if((sockerr && err == SSL_ERROR_SYSCALL) || sslerror) {
++#else
+       if((nread < 0) || sslerror) {
+-        /* If the return code was negative or there actually is an error in the
+-           queue */
+-        int sockerr = SOCKERRNO;
++#endif
++        /* If the return code was negative or (for older versions of OpenSSL) or
++	 *            there actually is an error on the error stack stack/errno */
+         if(sslerror)
+           ossl_strerror(sslerror, error_buffer, sizeof(error_buffer));
+         else if(sockerr && err == SSL_ERROR_SYSCALL)
+@@ -5227,6 +5231,12 @@
+         nread = -1;
+         goto out;
+       }
++#if (OPENSSL_VERSION_NUMBER >= 0x30200000L)
++      else {
++        nread = 0;
++        goto out;
++      }
++#endif
+       /* For debug builds be a little stricter and error on any
+          SSL_ERROR_SYSCALL. For example a server may have closed the connection
+          abruptly without a close_notify alert. For compatibility with older

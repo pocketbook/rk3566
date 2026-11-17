@@ -1,0 +1,4 @@
+0001-dont-build-static-dynamic-twice.patch
+0002-workaround-toolchain-bugs.patch
+0003-link-icudata-as-data-only.patch
+0004-fix-static-linking-with-icu-uc.patch

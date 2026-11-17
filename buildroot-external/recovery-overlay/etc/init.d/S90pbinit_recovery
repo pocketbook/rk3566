@@ -1,0 +1,20 @@
+#!/bin/sh
+
+export PATH=/usr/sbin:/usr/bin
+umask 022
+
+trap ":" INT QUIT TSTP
+
+ln -s /dev/block/by-name/userdata /dev/user_int
+ln -s /dev/block/by-name/pbenv /dev/pbenv
+ln -s /dev/block/by-name/secure /dev/secure
+
+# create links to current partitions for swupdate
+eval $(grep -o bootslot=. /proc/cmdline)
+if [ $bootslot ] ; then
+	ln -s boot_$bootslot /dev/disk/by-partlabel/boot
+	ln -s rootfs_$bootslot /dev/disk/by-partlabel/rootfs
+fi
+
+mount -a
+

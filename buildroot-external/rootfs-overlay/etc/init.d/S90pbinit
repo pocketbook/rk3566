@@ -1,0 +1,50 @@
+#!/bin/sh
+
+export PATH=/usr/sbin:/usr/bin
+umask 022
+
+trap ":" INT QUIT TSTP
+
+echo 0 >/proc/sys/kernel/printk
+
+# set maximum cpu frequency
+echo performance >/sys/devices/system/cpu/cpufreq/policy0/scaling_governor
+
+cat /mnt/secure/vcom > /sys/devices/platform/ebc-dev/pmic_vcom
+
+echo init audio...
+insmod /lib/modules/snd-aloop.ko pcm_substreams=1
+chmod a+rw /dev/snd/*
+
+echo loading mali modules...
+#insmod /lib/modules/mali.ko
+insmod /lib/modules/bifrost_kbase.ko
+chmod og+rw /dev/mali0 /dev/dri/card0
+
+{
+	echo loading touchpanel module...
+	usleep 500000
+	[ -f /lib/modules/ilitek_i2c.ko ] && insmod /lib/modules/ilitek_i2c.ko
+
+}&
+
+export QT_QPA_PLATFORM=pocketbook2
+
+B="\033[34m"
+N="\033[0m"
+DEBUG_INFO="\n
+# You can switch debug mode at any time with short command:\n
+# ${B}0:${N} disable debug\n
+# ${B}1:${N} user debug (kernel is disabled) to console\n
+# ${B}2:${N} whole debug (user and kernel debug) to console\n
+# ${B}3:${N} user debug (kernel is disabled) to /tmp/syslog\n
+# ${B}4:${N} whole debug (user and kernel debug) to /tmp/syslog\n
+# ${B}9:${N} switch between normal / differential tiomestamps\n
+\n"
+echo -e $DEBUG_INFO >&2
+
+echo -e "\n\n\033[36mStarting monitor (to disable, press enter during boot)\033[0m\n"
+read -t 0 && exit
+
+/ebrmain/bin/monitor.app > >(xlog) 2>&1
+

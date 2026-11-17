@@ -1,0 +1,52 @@
+diff -u a/default_options.h b/default_options.h
+--- a/default_options.h	2022-04-01 17:30:00.000000000 +0300
++++ b/default_options.h	2025-09-11 19:45:33.616948843 +0300
+@@ -37,7 +37,7 @@
+  * Both of these flags can be defined at once, don't compile without at least
+  * one of them. */
+ #define NON_INETD_MODE 1
+-#define INETD_MODE 1
++#define INETD_MODE 0
+ 
+ /* By default Dropbear will re-execute itself for each incoming connection so
+    that memory layout may be re-randomised (ASLR) - exploiting
+@@ -51,7 +51,7 @@
+  * TRACE1 - TRACE3 = approx 4 Kb (connection, remote identity, algos, auth type info)
+  * TRACE4 = approx 17 Kb (detailed before connection)
+  * TRACE5 = approx 8 Kb (detailed after connection) */
+-#define DEBUG_TRACE 0
++#define DEBUG_TRACE 4
+ 
+ /* Set this if you want to use the DROPBEAR_SMALL_CODE option. This can save
+  * several kB in binary size however will make the symmetrical ciphers and hashes
+@@ -205,7 +205,7 @@
+ #define DO_HOST_LOOKUP 0
+ 
+ /* Whether to print the message of the day (MOTD). */
+-#define DO_MOTD 1
++#define DO_MOTD 0
+ #define MOTD_FILENAME "/etc/motd"
+ 
+ /* Authentication Types - at least one required.
+@@ -341,4 +341,6 @@
+ #define DEFAULT_PATH "/usr/bin:/bin"
+ #define DEFAULT_ROOT_PATH "/usr/sbin:/usr/bin:/sbin:/bin"
+ 
++#define DROPBEAR_NO_AUTH_MODE 0
++
+ #endif /* DROPBEAR_DEFAULT_OPTIONS_H_ */
+diff -u a/svr-auth.c b/svr-auth.c
+--- a/svr-auth.c	2022-04-01 17:30:00.000000000 +0300
++++ b/svr-auth.c	2025-09-11 19:45:05.158260563 +0300
+@@ -123,6 +123,11 @@
+ 			strncmp(methodname, AUTH_METHOD_NONE,
+ 				AUTH_METHOD_NONE_LEN) == 0) {
+ 		TRACE(("recv_msg_userauth_request: 'none' request"))
++		#if DROPBEAR_NO_AUTH_MODE
++			TRACE(("allow login with no auth"))
++			send_msg_userauth_success();
++			goto out;
++		#endif
+ 		if (valid_user
+ 				&& svr_opts.allowblankpass
+ 				&& !svr_opts.noauthpass

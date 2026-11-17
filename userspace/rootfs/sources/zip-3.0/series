@@ -1,0 +1,8 @@
+0001-configure-Remove-Check-C-compiler-type-optimization-.patch
+0002-configure-Don-t-use-host-CPP.patch
+0003-Makefile-Use-CFLAGS-from-command-line.patch
+0004-configure-use-LDFLAGS-from-command-line.patch
+0005-unix-configure-remove-GID-UID-size-check.patch
+0006-unix-configure-borrow-the-LFS-test-from-autotools.patch
+0007-timezone.c-needs-time.h-fixes-musl-compile.patch
+0008-fix-musl-static-build.patch

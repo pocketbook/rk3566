@@ -1,0 +1,25 @@
+From 80bf535cbb2d2a1d8c625c4adb3b2c94e82b1c95 Mon Sep 17 00:00:00 2001
+From: Anatolii Porushkevych <anatolii.porushkevych@obreey-products.com>
+Date: Mon, 10 Nov 2025 14:02:12 +0200
+Subject: [PATCH] 2
+
+---
+ ToolChain.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ToolChain.cpp b/ToolChain.cpp
+index acf9d26..4358e2e 100644
+--- a/lib/Driver/ToolChain.cpp
++++ b/lib/Driver/ToolChain.cpp
+@@ -445,7 +445,7 @@ static const DriverSuffix *FindDriverSuffix(StringRef ProgName, size_t &Pos) {
+ /// Normalize the program name from argv[0] by stripping the file extension if
+ /// present and lower-casing the string on Windows.
+ static std::string normalizeProgramName(llvm::StringRef Argv0) {
+-  std::string ProgName = std::string(llvm::sys::path::filename(Argv0));
++  std::string ProgName = std::string(llvm::sys::path::stem(Argv0));
+   if (is_style_windows(llvm::sys::path::Style::native)) {
+     // Transform to lowercase for case insensitive file systems.
+     std::transform(ProgName.begin(), ProgName.end(), ProgName.begin(),
+-- 
+2.43.0
+

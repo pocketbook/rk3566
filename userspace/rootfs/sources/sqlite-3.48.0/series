@@ -1,0 +1,3 @@
+0001-sqlite3.pc.in-revert-upstream-commits-causing-build-.patch
+0002-Add-a-typecast-to-avoid-32-bit-integer-overflow-in-t.patch
+0003-Raise-error-if-too-many-aggregate-terms.patch

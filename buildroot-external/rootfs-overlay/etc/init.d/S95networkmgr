@@ -1,0 +1,38 @@
+#!/bin/sh
+
+{
+echo "Check Network Manager Status"
+
+waitapp="monitor.app"
+waitcount=10
+
+#monitor app has more then 2 processes when full run
+while ! [ `pidof $waitapp | wc | awk -e '{print $2}'` -gt 2 ] ; do
+        waitcount=$((waitcount-1))
+        [ "$waitcount" == "0" ] && echo "Network Manager is not started" && exit 1
+        #echo "...  Waiting monitor being ready ... $waitcount"
+        sleep 1;
+done;
+
+
+if [ -f /mnt/secure/netdevcache ]  && grep -q "flight_mode=1" "/mnt/secure/netdevcache" ; then
+        echo "Flight mode enabled. Network services are turned off"
+        /ebrmain/bin/netagent flightmode
+        exit 0
+fi
+
+if [ -f /mnt/secure/netdevcache ]  && grep -q "network_manager_status=1" "/mnt/secure/netdevcache" ; then
+        sleep 1
+        echo "Start Network Manager"
+        /ebrmain/bin/netagent net on
+fi
+
+if [ -f /mnt/secure/netdevcache ]  && grep -q "bluetooth_manager_status=1" "/mnt/secure/netdevcache" ; then
+        sleep 1
+        echo "Start Bluetooth Manager"
+        /ebrmain/bin/netagent bt on
+fi
+
+echo "Network Manager checker work done"
+}&
+

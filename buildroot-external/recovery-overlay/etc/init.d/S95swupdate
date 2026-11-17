@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+# Init script for swupdate BusyBox init)
+#
+
+# swupdate starting script does not exit
+
+case "$1" in
+  start)
+    echo "Starting swupdate..."
+    if [ $(dd if=/dev/pbenv bs=512 skip=1 count=1 2>/dev/null | crc32) = b2aa7578 ]; then
+	   export SWUPDATE_TEXT_MODE=1
+	   echo "in text mode"
+    fi
+    CRAMFS=yes /usr/bin/swupdate &
+    ;;
+  stop)
+    echo "Stopping swupdate..."
+    killall swupdate
+    ;;
+  restart)
+    $0 stop
+    $0 start
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart}"
+    exit 1
+esac
+
+exit 0
